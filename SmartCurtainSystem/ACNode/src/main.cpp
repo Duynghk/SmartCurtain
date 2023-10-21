@@ -1,16 +1,10 @@
-#include<Arduino.h>
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include "DHT.h"
+#include "config.h"
 
-// Update these with values suitable for your network.
-
-const char* SSID = "Khánh Duy";
-const char* PASSWORD = "0982104532";
-const char* mqtt_server = "broker.emqx.io";
-const char* clientId = "AirConditionerNode";
-const int mqtt_port = 1883;
-
+#define SENSOR_READING_INTERVAL 1000
 #define DHT_Pin 2
 #define LDR_Pin PIN_A0
 #define DHTTYPE DHT11
@@ -18,17 +12,22 @@ const int mqtt_port = 1883;
 WiFiClient espClient;
 PubSubClient client(espClient);
 DHT dht(DHT_Pin, DHTTYPE);
+os_timer_t timerInterrupt;
 
+int controlMessage = OFF;
+float temperature = 0;
+float humidity = 0;
+int indoorLight = 0;
+float lastTemp = 0;
+float lastHumi = 0;
+int lastLight = 0;
 
-int brightness = 0;
-float dataReceive = 0;
-float temp = 0;
 
 void SetupWifi();
 void ConnectToBroker();
 void InitMQTTProtocol();
 void MQTTCallback(char* , byte* , unsigned int);
-
+void TimerCallback(void *);
 
 void SetupWifi() {
   Serial.print("Connecting to ");
@@ -69,23 +68,6 @@ void InitMQTTProtocol()
   ConnectToBroker();
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < (int)length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-
-  payload[length] = '\0';
-    dataReceive = String((char*) payload).toFloat();
-
-    Serial.println(topic);
-    //Serial.println(value);
-
-}
-
 void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -96,13 +78,36 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   payload[length] = '\0';
   char* message = (char*) payload;
   if (strcmp(topic, CTRL_TOPIC) == 0) {
-    controlMessage = atoi(message);
+    if(strcmp(message, "ACNodeOn") == 0) 
+    {
+      os_timer_arm(&timerInterrupt, SENSOR_READING_INTERVAL, true);
+    }
+    if(strcmp(message, "ACNodeOff") == 0)
+    {
+      os_timer_disarm(&timerInterrupt);
+    }
   }
-  if (strcmp(topic, TEMP_TOPIC) == 0) {
-    temperature = atof(message);
+}
+
+void TimerCallback(void *pArg) {
+  temperature = dht.readTemperature();
+  humidity = dht.readHumidity();
+  indoorLight = analogRead(LDR_Pin);
+  
+  if(temperature != lastTemp)
+  {
+    client.publish(TEMP_TOPIC, String(temperature).c_str());
+    lastTemp = temperature;
   }
-  if (strcmp(topic, IN_LDR_TOPIC) == 0) {
-    indoorLight = atoi(message);
+  if(humidity != lastHumi)
+  {
+    client.publish(HUMI_TOPIC, String(humidity).c_str());
+    lastHumi = humidity;
+  }
+  if(indoorLight != lastLight)
+  {
+    client.publish(IN_LDR_TOPIC, String(indoorLight).c_str());
+    lastLight = indoorLight;
   }
 }
 
@@ -110,19 +115,12 @@ void setup() {
   Serial.begin(115200);
   InitMQTTProtocol();
   dht.begin();
+  os_timer_setfn(&timerInterrupt, TimerCallback, NULL);
 }
 
 void loop() {
-
   if (!client.connected()) {
-    reconnect();
+    ConnectToBroker();
   }
   client.loop();
-  temp = dht.readTemperature();
-  brightness = analogRead(LDR_Pin);
-
-  client.publish("SmartHome/Temperature", String(temp).c_str());
-  client.publish("SmartHome/Brightness", String(brightness).c_str());
-  delay(5000);
-  
 }
