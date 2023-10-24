@@ -110,56 +110,59 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   }
   payload[length] = '\0';
   char* message = (char*) payload;
-  if (strcmp(topic, CTRL_TOPIC) == 0) {
+  if (strcmp(topic, CTRL_TOPIC) == 0) 
+  {
     if(strcmp(message, "NodeOn") == 0)
     {
       stateNode = ON;
       startTime = millis();
       os_timer_arm(&timerInterrupt, SENSOR_READING_INTERVAL, true);
-    } else 
-      if(strcmp(message, "NodeOff") == 0)
+    } 
+    else if(strcmp(message, "NodeOff") == 0)
+    {
+      stateNode = OFF;
+      os_timer_disarm(&timerInterrupt);
+    }
+    else if(strcmp(message, "AutoMode") == 0)
+    {
+      nodeMode = AUTO_MODE;
+      memory.putBool(MODE_KEY, AUTO_MODE);
+      Serial.println("The auto mode is set");
+    }
+    else if(strcmp(message, "ManualMode") == 0)
+    {
+      nodeMode = MANUAL_MODE;
+      memory.putBool(MODE_KEY, MANUAL_MODE);
+      Serial.println("The manual mode is set");
+    }
+    else if(strcmp(message, "CloseCurtain") == 0)
+    {
+      curtainStatus = CLOSE;
+    }
+    else if(strcmp(message, "OpenCurtain") == 0)
+    {
+      curtainStatus = OPEN;
+    } 
+    else
+    {
+      char identifier[3];
+      strncpy(identifier, message, 2);
+      identifier[2] = '\0';
+      const char* data = message + 2;
+      if(strcmp(identifier, "SH") == 0)
       {
-        stateNode = OFF;
-        os_timer_disarm(&timerInterrupt);
-      } else 
-        if(strcmp(message, "AutoMode") == 0)
+        highTempThreshold = atoi(data);
+        memory.putInt(HIGH_TEMP_THRESHOLD_KEY, highTempThreshold);
+      } else
+        if(strcmp(identifier, "SL") == 0)
         {
-          nodeMode = AUTO_MODE;
-          memory.putBool(MODE_KEY, AUTO_MODE);
-          Serial.println("The auto mode is set");
-        } else
-          if(strcmp(message, "ManualMode") == 0)
-          {
-            nodeMode = MANUAL_MODE;
-            memory.putBool(MODE_KEY, MANUAL_MODE);
-            Serial.println("The manual mode is set");
-          } else
-            if(strcmp(message, "CloseCurtain") == 0)
-            {
-              curtainStatus = CLOSE;
-            } else
-              if(strcmp(message, "OpenCurtain") == 0)
-              {
-                curtainStatus = OPEN;
-              } else
-                {
-                  char identifier[3];
-                  strncpy(identifier, message, 2);
-                  identifier[2] = '\0';
-                  const char* data = message + 2;
-                  if(strcmp(identifier, "SH") == 0)
-                  {
-                    highTempThreshold = atoi(data);
-                    memory.putInt(HIGH_TEMP_THRESHOLD_KEY, highTempThreshold);
-                  } else
-                    if(strcmp(identifier, "SL") == 0)
-                    {
-                      lowTempThreshold = atoi(data);
-                      memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowTempThreshold);
-                    }
-                }
-                
-  } else
+          lowTempThreshold = atoi(data);
+          memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowTempThreshold);
+        }
+    }   
+  } 
+  else 
+  {
     if (strcmp(topic, TEMP_TOPIC) == 0) {
       temperature = atof(message);
       tempValid = true;
@@ -168,6 +171,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
         indoorLight = atoi(message);
         lightValid = true;
       } 
+  }
 }
 
 void TimerCallback(void *pArg) {
