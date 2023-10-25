@@ -13,7 +13,7 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 Preferences memory;
-os_timer_t timerInterrupt;
+os_timer_t sensorTriggeredHalt;
 
 unsigned long startTime = 0;
 int stateNode = OFF;
@@ -36,7 +36,7 @@ void ConnectToBroker();
 void InitMQTTProtocol();
 void MQTTCallback(char* , byte* , unsigned int);
 void SetMode(char *);
-void TimerCallback(void *);
+void ReadLightSensor(void *);
 
 void ReadUserConfig() 
 {
@@ -174,7 +174,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-void TimerCallback(void *pArg) {
+void ReadLightSensor(void *pArg) {
   Serial.print("Timer interrupt count: ");
 }
 
@@ -183,8 +183,8 @@ void setup() {
   ReadUserConfig();
   InitMQTTProtocol();
   pinMode(LED,OUTPUT);
-  os_timer_setfn(&timerInterrupt, TimerCallback, NULL);
-  os_timer_arm(&timerInterrupt, SENSOR_READING_INTERVAL, true);
+  os_timer_setfn(&sensorTriggeredHalt, ReadLightSensor, NULL);
+  os_timer_arm(&sensorTriggeredHalt, SENSOR_READING_INTERVAL, true);
 }
 void loop() {
   if (!client.connected()) {

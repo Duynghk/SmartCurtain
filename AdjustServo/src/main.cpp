@@ -12,6 +12,7 @@ os_timer_t timerInterrupt;
 Servo servo;
 Preferences memory;
 
+/* These lines are declaring and initializing variables used in the code: */
 int systemState = ON;
 int closeAngle = DEFAULT_CLOSE_ANGLE;
 int openAngle = DEFAULT_OPEN_ANGLE;
