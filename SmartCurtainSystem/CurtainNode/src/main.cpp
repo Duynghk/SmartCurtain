@@ -4,6 +4,7 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
+#define MAX_WAIT_TIME 60000
 #define SENSOR_READING_INTERVAL 1000
 #define DEFAULT_HIGH_TEMP 28
 #define DEFAULT_LOW_TEMP 23
@@ -19,6 +20,7 @@ unsigned long startTime = 0;
 int stateNode = OFF;
 bool nodeMode = DEFAULT_MODE;
 int curtainStatus = CLOSE;
+int lastCurtainStatus = CLOSE;
 int control = CLOSE;
 int controlMessage = OFF;
 float temperature = 0;
@@ -116,12 +118,17 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
     {
       stateNode = ON;
       startTime = millis();
-      os_timer_arm(&timerInterrupt, SENSOR_READING_INTERVAL, true);
+      os_timer_arm(&sensorTriggeredHalt, SENSOR_READING_INTERVAL, true);
+      //todo: call read senor funtion
     } 
     else if(strcmp(message, "NodeOff") == 0)
     {
       stateNode = OFF;
-      os_timer_disarm(&timerInterrupt);
+      curtainStatus = CLOSE;
+      lastCurtainStatus = CLOSE;
+      os_timer_disarm(&sensorTriggeredHalt);
+      //control servo
+      client.publish(STATUS_TOPIC, "CurtainClose");
     }
     else if(strcmp(message, "AutoMode") == 0)
     {
@@ -191,23 +198,50 @@ void loop() {
     ConnectToBroker();
   }
   client.loop();
-  if (nodeMode) 
+  checkSTATE:if(stateNode) 
   {
-    digitalWrite(LED,HIGH);
-    delay(500);
-    digitalWrite(LED,LOW);
-    delay(500);
+    if(nodeMode == AUTO_MODE)
+    {
+      if(tempValid == true && lightValid == true)
+      {
+        if(temperature < highTempThreshold)
+        {
+          if(temperature < lowTempThreshold)
+          {
+            if(outdoorLight == DARK) {curtainStatus = CLOSE;}
+            else {curtainStatus = OPEN;}
+          } 
+          else
+          {
+            if(indoorLight == DARK && outdoorLight == LIGHT) {curtainStatus = OPEN;}
+            else {curtainStatus = CLOSE;}
+          }
+        }
+        else {curtainStatus = CLOSE;}
+      }
+      else
+      {
+        if(millis() - startTime > MAX_WAIT_TIME)
+        {
+          nodeMode = MANUAL_MODE;
+          client.publish(CTRL_TOPIC, "ModeChanged");
+          client.publish(ERROR_TOPIC, "ACError");
+        }
+        goto checkSTATE;
+      }
+    }
+    if(lastCurtainStatus != curtainStatus)
+    {
+      lastCurtainStatus = curtainStatus;
+      //to do: ctrl servo
+      if(curtainStatus == CLOSE)
+      {
+        client.publish(STATUS_TOPIC, "CurtainCose");
+      }
+      else
+      {
+        client.publish(STATUS_TOPIC, "CurtainOpen");
+      }
+    }
   }
-  else 
-  {
-    digitalWrite(LED,HIGH);
-    delay(50);
-    digitalWrite(LED,LOW);
-    delay(50);
-    digitalWrite(LED,HIGH);
-    delay(50);
-    digitalWrite(LED,LOW);
-    delay(200);
-  }
-  delay(100);
 }

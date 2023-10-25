@@ -24,7 +24,7 @@ const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
 #define LIGHT 1
 
 // Wi-Fi network information
-#define SSID "Khánh Duy"
+#define SSID "Khanh Duy"
 #define PASSWORD "0982104532"
 
 // MQTT broker information
@@ -37,6 +37,8 @@ const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
 #define TEMP_TOPIC "Smarthome/Temperature"
 #define IN_LDR_TOPIC "Smarthome/LightIndoor"
 #define OUT_LDR_TOPIC "Smarthome/LightOutdoor"
+#define STATUS_TOPIC "SmartHome/UpdateStatusNodes"
+#define ERROR_TOPIC "SmartHome/ErrorWarning"
 
 const char* AUTO_MODE_STRING = "auto";
 const char* MANUAL_MODE_STRING = "manual";
