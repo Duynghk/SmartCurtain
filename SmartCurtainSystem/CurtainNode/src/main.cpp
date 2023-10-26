@@ -3,29 +3,34 @@
 #include <Preferences.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <Servo.h>
 
 #define MAX_WAIT_TIME 60000
 #define SENSOR_READING_INTERVAL 1000
 #define DEFAULT_HIGH_TEMP 28
 #define DEFAULT_LOW_TEMP 23
 #define LIGHT_OUTDOOR_PIN 0
-
+#define closeAngle 0
+#define openAngle 90
+#define LDR_PIN 1
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Preferences memory;
 os_timer_t sensorTriggeredHalt;
+Servo servo;
 
+ 
 unsigned long startTime = 0;
 int stateNode = OFF;
 bool nodeMode = DEFAULT_MODE;
 int curtainStatus = CLOSE;
 int lastCurtainStatus = CLOSE;
-int control = CLOSE;
 int controlMessage = OFF;
 float temperature = 0;
 int indoorLight = 0;
 int outdoorLight = 0;
+int lastOutDoorLight = 0;
 int highTempThreshold = DEFAULT_HIGH_TEMP;
 int lowTempThreshold = DEFAULT_LOW_TEMP;
 bool tempValid = false;
@@ -127,7 +132,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       curtainStatus = CLOSE;
       lastCurtainStatus = CLOSE;
       os_timer_disarm(&sensorTriggeredHalt);
-      //control servo
+      servo.write(closeAngle);
       client.publish(STATUS_TOPIC, "CurtainClose");
     }
     else if(strcmp(message, "AutoMode") == 0)
@@ -182,7 +187,13 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 void ReadLightSensor(void *pArg) {
-  Serial.print("Timer interrupt count: ");
+  //Serial.print("Timer interrupt count: ");
+  outdoorLight = digitalRead(LDR_PIN);
+  if(outdoorLight != lastOutDoorLight)
+  {
+    if(outdoorLight == DARK) client.publish(OUT_LDR_TOPIC, "0");
+    else client.publish(OUT_LDR_TOPIC, "1");
+  }
 }
 
 void setup() {
@@ -190,6 +201,7 @@ void setup() {
   ReadUserConfig();
   InitMQTTProtocol();
   pinMode(LED,OUTPUT);
+  servo.attach(0);
   os_timer_setfn(&sensorTriggeredHalt, ReadLightSensor, NULL);
   os_timer_arm(&sensorTriggeredHalt, SENSOR_READING_INTERVAL, true);
 }
@@ -232,14 +244,15 @@ void loop() {
     }
     if(lastCurtainStatus != curtainStatus)
     {
-      lastCurtainStatus = curtainStatus;
-      //to do: ctrl servo
+      lastCurtainStatus = curtainStatus; 
       if(curtainStatus == CLOSE)
       {
+        servo.write(closeAngle);
         client.publish(STATUS_TOPIC, "CurtainCose");
       }
       else
       {
+        servo.write(openAngle);
         client.publish(STATUS_TOPIC, "CurtainOpen");
       }
     }
