@@ -5,14 +5,14 @@
 #include <PubSubClient.h>
 #include <Servo.h>
 
-#define MAX_WAIT_TIME 60000
+#define MAX_WAIT_SENSOR_TIME 60000
 #define SENSOR_READING_INTERVAL 1000
 #define DEFAULT_HIGH_TEMP 28
 #define DEFAULT_LOW_TEMP 23
+#define CURTAIN_CLOSE_ANGLE 0
+#define CURTAIN_OPEN_ANGLE 130
 #define LIGHT_OUTDOOR_PIN 0
-#define closeAngle 0
-#define openAngle 90
-#define LDR_PIN 1
+#define SERVO_PIN 2
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -55,10 +55,10 @@ void ReadUserConfig()
 }
 void SetupWifi() {
   Serial.print("Connecting to ");
-  Serial.println(SSID);
+  Serial.println(MY_SSID);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASSWORD);
+  WiFi.begin(MY_SSID, PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -119,12 +119,14 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   char* message = (char*) payload;
   if (strcmp(topic, CTRL_TOPIC) == 0) 
   {
-    if(strcmp(message, "NodeOn") == 0)
+    Serial.println("Control topic");
+    if(strcmp(message, NODE_ON_STRING) == 0)
     {
       stateNode = ON;
       startTime = millis();
       os_timer_arm(&sensorTriggeredHalt, SENSOR_READING_INTERVAL, true);
-      //todo: call read senor funtion
+      ReadLightSensor(NULL);
+      Serial.println("Received NodeOn");
     } 
     else if(strcmp(message, "NodeOff") == 0)
     {
@@ -132,8 +134,9 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       curtainStatus = CLOSE;
       lastCurtainStatus = CLOSE;
       os_timer_disarm(&sensorTriggeredHalt);
-      servo.write(closeAngle);
+      servo.write(CURTAIN_CLOSE_ANGLE);
       client.publish(STATUS_TOPIC, "CurtainClose");
+      Serial.println("Smart Curtain is off");
     }
     else if(strcmp(message, "AutoMode") == 0)
     {
@@ -165,12 +168,13 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       {
         highTempThreshold = atoi(data);
         memory.putInt(HIGH_TEMP_THRESHOLD_KEY, highTempThreshold);
-      } else
-        if(strcmp(identifier, "SL") == 0)
-        {
-          lowTempThreshold = atoi(data);
-          memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowTempThreshold);
-        }
+      } 
+      if(strcmp(identifier, "SL") == 0)
+      {
+        lowTempThreshold = atoi(data);
+        memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowTempThreshold);
+      }
+      Serial.println("Toang");
     }   
   } 
   else 
@@ -188,7 +192,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
 
 void ReadLightSensor(void *pArg) {
   //Serial.print("Timer interrupt count: ");
-  outdoorLight = digitalRead(LDR_PIN);
+  outdoorLight = digitalRead(LIGHT_OUTDOOR_PIN);
   if(outdoorLight != lastOutDoorLight)
   {
     if(outdoorLight == DARK) client.publish(OUT_LDR_TOPIC, "0");
@@ -200,8 +204,8 @@ void setup() {
   Serial.begin(115200);
   ReadUserConfig();
   InitMQTTProtocol();
-  pinMode(LED,OUTPUT);
-  servo.attach(0);
+  servo.attach(SERVO_PIN);
+  servo.write(CURTAIN_CLOSE_ANGLE);
   os_timer_setfn(&sensorTriggeredHalt, ReadLightSensor, NULL);
   os_timer_arm(&sensorTriggeredHalt, SENSOR_READING_INTERVAL, true);
 }
@@ -212,6 +216,7 @@ void loop() {
   client.loop();
   checkSTATE:if(stateNode) 
   {
+    Serial.println("Smart curtain is on");
     if(nodeMode == AUTO_MODE)
     {
       if(tempValid == true && lightValid == true)
@@ -233,7 +238,7 @@ void loop() {
       }
       else
       {
-        if(millis() - startTime > MAX_WAIT_TIME)
+        if(millis() - startTime > MAX_WAIT_SENSOR_TIME)
         {
           nodeMode = MANUAL_MODE;
           client.publish(CTRL_TOPIC, "ModeChanged");
@@ -247,14 +252,15 @@ void loop() {
       lastCurtainStatus = curtainStatus; 
       if(curtainStatus == CLOSE)
       {
-        servo.write(closeAngle);
+        servo.write(CURTAIN_CLOSE_ANGLE);
         client.publish(STATUS_TOPIC, "CurtainCose");
       }
       else
       {
-        servo.write(openAngle);
+        servo.write(CURTAIN_OPEN_ANGLE);
         client.publish(STATUS_TOPIC, "CurtainOpen");
       }
     }
   }
+  delay(1000);
 }

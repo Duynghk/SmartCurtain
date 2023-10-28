@@ -107,6 +107,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   {
     systemState = OFF;
     os_timer_disarm(&timerInterrupt);
+    Serial.println("System is off");
   }
 }
 

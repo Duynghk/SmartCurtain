@@ -24,7 +24,7 @@ const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
 #define LIGHT 1
 
 // Wi-Fi network information
-#define SSID "Khanh Duy"
+#define MY_SSID "Khánh Duy"
 #define PASSWORD "0982104532"
 
 // MQTT broker information
@@ -42,8 +42,6 @@ const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
 
 const char* AUTO_MODE_STRING = "auto";
 const char* MANUAL_MODE_STRING = "manual";
-
-// LED connection pin
-#define LED 2
+#define NODE_ON_STRING "NodeOn"
 
 #endif
