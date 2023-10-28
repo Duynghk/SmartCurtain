@@ -117,6 +117,8 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   }
   payload[length] = '\0';
   char* message = (char*) payload;
+  Serial.println(topic);
+  Serial.println(message);
   if (strcmp(topic, CTRL_TOPIC) == 0) 
   {
     Serial.println("Control topic");
@@ -153,13 +155,16 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
     else if(strcmp(message, "CloseCurtain") == 0)
     {
       curtainStatus = CLOSE;
+      Serial.println("Manual close");
     }
     else if(strcmp(message, "OpenCurtain") == 0)
     {
       curtainStatus = OPEN;
+      Serial.println("Manual open");
     } 
     else
     {
+      Serial.println("Read High_Low TEMP");
       char identifier[3];
       strncpy(identifier, message, 2);
       identifier[2] = '\0';
@@ -179,13 +184,16 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   } 
   else 
   {
+    Serial.println("RECEIVE SSDATA");
     if (strcmp(topic, TEMP_TOPIC) == 0) {
       temperature = atof(message);
       tempValid = true;
+      Serial.println("RECEIVE TEMP");
     } else
       if (strcmp(topic, IN_LDR_TOPIC) == 0) {
         indoorLight = atoi(message);
         lightValid = true;
+        Serial.println("RECEIVE LDR");
       } 
   }
 }
@@ -262,5 +270,5 @@ void loop() {
       }
     }
   }
-  delay(1000);
+  // delay(1000);
 }

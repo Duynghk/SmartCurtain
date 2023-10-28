@@ -24,8 +24,8 @@ const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
 #define LIGHT 1
 
 // Wi-Fi network information
-#define MY_SSID "Khánh Duy"
-#define PASSWORD "0982104532"
+#define MY_SSID "ddd"
+#define PASSWORD "21521927"
 
 // MQTT broker information
 #define MQTT_SERVER "broker.emqx.io"
