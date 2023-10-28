@@ -7,10 +7,6 @@
 
 #define MAX_WAIT_SENSOR_TIME 60000
 #define SENSOR_READING_INTERVAL 1000
-#define DEFAULT_HIGH_TEMP 28
-#define DEFAULT_LOW_TEMP 23
-#define CURTAIN_CLOSE_ANGLE 0
-#define CURTAIN_OPEN_ANGLE 130
 #define LIGHT_OUTDOOR_PIN 0
 #define SERVO_PIN 2
 
@@ -75,6 +71,8 @@ void ConnectToBroker() {
     if (client.connect(CLIENT_ID)) {
       Serial.println("The MQTT broker is connected");
       client.subscribe(CTRL_TOPIC);
+      client.subscribe(INDOOR_TEMP_TOPIC);
+      client.subscribe(INDOOR_LIGHT_TOPIC);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -94,13 +92,13 @@ void InitMQTTProtocol()
 
 void SetMode(char * message)
 {
-  if(strcmp(message, AUTO_MODE_STRING) == 0) 
+  if(strcmp(message, SET_AUTO_MODE) == 0) 
   {
     nodeMode = AUTO_MODE;
     memory.putBool(MODE_KEY, AUTO_MODE);
     Serial.println("The auto mode is set");
   }
-  else if (strcmp(message, MANUAL_MODE_STRING) == 0)
+  else if (strcmp(message, SET_MANUAL_MODE) == 0)
   {
     nodeMode = MANUAL_MODE;
     memory.putBool(MODE_KEY, MANUAL_MODE);
@@ -122,7 +120,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic, CTRL_TOPIC) == 0) 
   {
     Serial.println("Control topic");
-    if(strcmp(message, NODE_ON_STRING) == 0)
+    if(strcmp(message, TURN_ON_NODE) == 0)
     {
       stateNode = ON;
       startTime = millis();
@@ -130,34 +128,34 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       ReadLightSensor(NULL);
       Serial.println("Received NodeOn");
     } 
-    else if(strcmp(message, "NodeOff") == 0)
+    else if(strcmp(message, TURN_OFF_NODE) == 0)
     {
       stateNode = OFF;
       curtainStatus = CLOSE;
       lastCurtainStatus = CLOSE;
       os_timer_disarm(&sensorTriggeredHalt);
       servo.write(CURTAIN_CLOSE_ANGLE);
-      client.publish(STATUS_TOPIC, "CurtainClose");
+      client.publish(STATUS_TOPIC, CURTAIN_CLOSED);
       Serial.println("Smart Curtain is off");
     }
-    else if(strcmp(message, "AutoMode") == 0)
+    else if(strcmp(message, SET_AUTO_MODE) == 0)
     {
       nodeMode = AUTO_MODE;
       memory.putBool(MODE_KEY, AUTO_MODE);
       Serial.println("The auto mode is set");
     }
-    else if(strcmp(message, "ManualMode") == 0)
+    else if(strcmp(message, SET_MANUAL_MODE) == 0)
     {
       nodeMode = MANUAL_MODE;
       memory.putBool(MODE_KEY, MANUAL_MODE);
       Serial.println("The manual mode is set");
     }
-    else if(strcmp(message, "CloseCurtain") == 0)
+    else if(strcmp(message, CLOSE_CURTAIN) == 0)
     {
       curtainStatus = CLOSE;
       Serial.println("Manual close");
     }
-    else if(strcmp(message, "OpenCurtain") == 0)
+    else if(strcmp(message, OPEN_CURTAIN) == 0)
     {
       curtainStatus = OPEN;
       Serial.println("Manual open");
@@ -169,32 +167,33 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       strncpy(identifier, message, 2);
       identifier[2] = '\0';
       const char* data = message + 2;
-      if(strcmp(identifier, "SH") == 0)
+      if(strcmp(identifier, SET_HIGH_TEMP_THRESHOLD) == 0)
       {
         highTempThreshold = atoi(data);
         memory.putInt(HIGH_TEMP_THRESHOLD_KEY, highTempThreshold);
       } 
-      if(strcmp(identifier, "SL") == 0)
+      if(strcmp(identifier, SET_LOW_TEMP_THRESHOLD) == 0)
       {
         lowTempThreshold = atoi(data);
         memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowTempThreshold);
       }
-      Serial.println("Toang");
     }   
   } 
   else 
   {
-    Serial.println("RECEIVE SSDATA");
-    if (strcmp(topic, TEMP_TOPIC) == 0) {
+    Serial.println("Received data from AC node");
+    if (strcmp(topic, INDOOR_TEMP_TOPIC) == 0) 
+    {
       temperature = atof(message);
       tempValid = true;
-      Serial.println("RECEIVE TEMP");
-    } else
-      if (strcmp(topic, IN_LDR_TOPIC) == 0) {
-        indoorLight = atoi(message);
-        lightValid = true;
-        Serial.println("RECEIVE LDR");
-      } 
+      Serial.println("Received temperature indoor");
+    } 
+    else if (strcmp(topic, INDOOR_LIGHT_TOPIC) == 0) 
+    {
+      indoorLight = atoi(message);
+      lightValid = true;
+      Serial.println("Received brightness indoor");
+    } 
   }
 }
 
@@ -203,9 +202,10 @@ void ReadLightSensor(void *pArg) {
   outdoorLight = digitalRead(LIGHT_OUTDOOR_PIN);
   if(outdoorLight != lastOutDoorLight)
   {
-    if(outdoorLight == DARK) client.publish(OUT_LDR_TOPIC, "0");
-    else client.publish(OUT_LDR_TOPIC, "1");
+    if(outdoorLight == DARK) client.publish(OUTDOOR_LIGHT_TOPIC, DARK_STRING);
+    else client.publish(OUTDOOR_LIGHT_TOPIC, LIGHT_STRING);
   }
+  lastOutDoorLight = outdoorLight;
 }
 
 void setup() {
@@ -224,7 +224,6 @@ void loop() {
   client.loop();
   checkSTATE:if(stateNode) 
   {
-    Serial.println("Smart curtain is on");
     if(nodeMode == AUTO_MODE)
     {
       if(tempValid == true && lightValid == true)
@@ -249,8 +248,8 @@ void loop() {
         if(millis() - startTime > MAX_WAIT_SENSOR_TIME)
         {
           nodeMode = MANUAL_MODE;
-          client.publish(CTRL_TOPIC, "ModeChanged");
-          client.publish(ERROR_TOPIC, "ACError");
+          client.publish(CTRL_TOPIC, MODE_CHANGED);
+          client.publish(ERROR_TOPIC, AC_ERROR);
         }
         goto checkSTATE;
       }
@@ -261,7 +260,7 @@ void loop() {
       if(curtainStatus == CLOSE)
       {
         servo.write(CURTAIN_CLOSE_ANGLE);
-        client.publish(STATUS_TOPIC, "CurtainCose");
+        client.publish(STATUS_TOPIC, "CurtainClose");
       }
       else
       {
@@ -270,5 +269,5 @@ void loop() {
       }
     }
   }
-  // delay(1000);
+  delay(1000);
 }
