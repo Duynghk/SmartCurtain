@@ -5,9 +5,9 @@
 #include <PubSubClient.h>
 #include <Servo.h>
 
-#define MAX_WAIT_SENSOR_TIME 60000
+#define MAX_WAIT_SENSOR_TIME 30000
 #define SENSOR_READING_INTERVAL 1000
-#define LIGHT_OUTDOOR_PIN 0
+#define LIGHT_OUTDOOR_PIN 3
 #define SERVO_PIN 2
 
 WiFiClient espClient;
@@ -47,7 +47,13 @@ void ReadUserConfig()
   nodeMode = memory.getBool(MODE_KEY, DEFAULT_MODE);
   highTempThreshold = memory.getInt(HIGH_TEMP_THRESHOLD_KEY, DEFAULT_HIGH_TEMP);
   lowTempThreshold = memory.getInt(LOW_TEMP_THRESHOLD_KEY, DEFAULT_LOW_TEMP);
-  Serial.println("User config is read");
+  Serial.print("User config is read: ");
+  Serial.print(nodeMode);
+  Serial.print("\t");
+  Serial.print(highTempThreshold);
+  Serial.print("\t");
+  Serial.print(lowTempThreshold);
+  Serial.print("\n");
 }
 void SetupWifi() {
   Serial.print("Connecting to ");
@@ -190,7 +196,14 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
     } 
     else if (strcmp(topic, INDOOR_LIGHT_TOPIC) == 0) 
     {
-      indoorLight = atoi(message);
+      if(strcmp(message, DARK_STRING) == 0) 
+      {
+        indoorLight = DARK;
+      }
+      else 
+      {
+        indoorLight = LIGHT;
+      }
       lightValid = true;
       Serial.println("Received brightness indoor");
     } 
@@ -198,7 +211,6 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 void ReadLightSensor(void *pArg) {
-  //Serial.print("Timer interrupt count: ");
   outdoorLight = digitalRead(LIGHT_OUTDOOR_PIN);
   if(outdoorLight != lastOutDoorLight)
   {
@@ -209,9 +221,10 @@ void ReadLightSensor(void *pArg) {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200,SERIAL_8N1,SERIAL_TX_ONLY);
   ReadUserConfig();
   InitMQTTProtocol();
+  pinMode(LIGHT_OUTDOOR_PIN, INPUT_PULLUP);
   servo.attach(SERVO_PIN);
   servo.write(CURTAIN_CLOSE_ANGLE);
   os_timer_setfn(&sensorTriggeredHalt, ReadLightSensor, NULL);
@@ -226,6 +239,7 @@ void loop() {
   {
     if(nodeMode == AUTO_MODE)
     {
+      Serial.println("System is in Auto Mode");
       if(tempValid == true && lightValid == true)
       {
         if(temperature < highTempThreshold)
@@ -251,8 +265,13 @@ void loop() {
           client.publish(CTRL_TOPIC, MODE_CHANGED);
           client.publish(ERROR_TOPIC, AC_ERROR);
         }
+        delay(100);
         goto checkSTATE;
       }
+    }
+    else 
+    {
+      Serial.println("System is in Manual Mode");
     }
     if(lastCurtainStatus != curtainStatus)
     {
@@ -261,11 +280,13 @@ void loop() {
       {
         servo.write(CURTAIN_CLOSE_ANGLE);
         client.publish(STATUS_TOPIC, "CurtainClose");
+        Serial.println("Curtain Closed");
       }
       else
       {
         servo.write(CURTAIN_OPEN_ANGLE);
         client.publish(STATUS_TOPIC, "CurtainOpen");
+        Serial.println("Curtain Opened");
       }
     }
   }

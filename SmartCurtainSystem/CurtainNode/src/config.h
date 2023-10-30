@@ -22,11 +22,11 @@
 #define CLOSE 0
 #define OPEN 1
 
-// Device states (ON/OFF or LIGHT/DARK)
+// Device states
 #define OFF 0
 #define ON 1
-#define DARK 0
-#define LIGHT 1
+#define DARK 1
+#define LIGHT 0
 
 // Wi-Fi network information
 #define MY_SSID "Khánh Duy"
@@ -61,8 +61,8 @@
 #define MODE_CHANGED "ModeChanged"
 
 // Light sensor messages
-#define DARK_STRING "DARK"
-#define LIGHT_STRING "LIGHT"
+#define DARK_STRING "Dark"
+#define LIGHT_STRING "Light"
 
 // ERROR 
 #define AC_ERROR "ACError"
