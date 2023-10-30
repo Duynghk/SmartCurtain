@@ -6,22 +6,27 @@
 #define MANUAL_MODE false
 #define DEFAULT_MODE AUTO_MODE
 
-//Use for EEPROM
-const char* MEMORY_NAMESPACE = "NodeMemory";
-const char* MODE_KEY = "mode";
-const char* HIGH_TEMP_THRESHOLD_KEY = "highTempThreshold";
-const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
+// Default values
+#define DEFAULT_HIGH_TEMP 28
+#define DEFAULT_LOW_TEMP 23
+#define CURTAIN_CLOSE_ANGLE 0
+#define CURTAIN_OPEN_ANGLE 130
 
+//Use for EEPROM
+#define MEMORY_NAMESPACE "NodeMemory"
+#define MODE_KEY "mode"
+#define HIGH_TEMP_THRESHOLD_KEY "highTempThreshold"
+#define LOW_TEMP_THRESHOLD_KEY "lowTempThreshold"
 
 // Curtain status
 #define CLOSE 0
 #define OPEN 1
 
-// Device states (ON/OFF or LIGHT/DARK)
+// Device states
 #define OFF 0
 #define ON 1
-#define DARK 0
-#define LIGHT 1
+#define DARK 1
+#define LIGHT 0
 
 // Wi-Fi network information
 #define MY_SSID "Khánh Duy"
@@ -34,14 +39,31 @@ const char* LOW_TEMP_THRESHOLD_KEY = "lowTempThreshold";
 
 // MQTT topics
 #define CTRL_TOPIC "Smarthome/ControlCurtainSystem"
-#define TEMP_TOPIC "Smarthome/Temperature"
-#define IN_LDR_TOPIC "Smarthome/LightIndoor"
-#define OUT_LDR_TOPIC "Smarthome/LightOutdoor"
+#define INDOOR_TEMP_TOPIC "Smarthome/Temperature"
+#define INDOOR_LIGHT_TOPIC "Smarthome/LightIndoor"
+#define OUTDOOR_LIGHT_TOPIC "Smarthome/LightOutdoor"
 #define STATUS_TOPIC "SmartHome/UpdateStatusNodes"
 #define ERROR_TOPIC "SmartHome/ErrorWarning"
 
-const char* AUTO_MODE_STRING = "auto";
-const char* MANUAL_MODE_STRING = "manual";
-#define NODE_ON_STRING "NodeOn"
+// Control messages
+#define TURN_ON_NODE "NodeOn"
+#define TURN_OFF_NODE "NodeOff"
+#define SET_AUTO_MODE "AutoMode"
+#define SET_MANUAL_MODE "ManualMode"
+#define CLOSE_CURTAIN "CloseCurtain"
+#define OPEN_CURTAIN "OpenCurtain"
+#define SET_HIGH_TEMP_THRESHOLD "SH"
+#define SET_LOW_TEMP_THRESHOLD "SL"
 
+// Curtain status messages
+#define CURTAIN_CLOSED "CurtainClosed"
+#define CURTAIN_OPENED "CurtainOpened"
+#define MODE_CHANGED "ModeChanged"
+
+// Light sensor messages
+#define DARK_STRING "Dark"
+#define LIGHT_STRING "Light"
+
+// ERROR 
+#define AC_ERROR "ACError"
 #endif
