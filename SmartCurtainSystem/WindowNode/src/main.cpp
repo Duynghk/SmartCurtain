@@ -27,19 +27,17 @@ bool nodeMode = DEFAULT_MODE;
 int windowStatus = CLOSE;
 int lastWindowStatus = CLOSE;
 int controlMessage = OFF;
-float temperature = 0;
 int indoorLight = 0;
 int outdoorLight = 0;
 
-int indoorTemp = 0;
-int outdoorTemp = 0;
-int lastOutDoorTemp = 0;
-int indoorHumi = 0;
-int outdoorHumi = 0;
-int lastOutDoorHumi = 0;
+float indoorTemp = 0;
+float outdoorTemp = 0;
+float lastOutDoorTemp = 0;
+float indoorHumi = 0;
+float outdoorHumi = 0;
+float lastOutDoorHumi = 0;
 bool rain = false;
 int lastRain = false;
-int lastOutDoorLight = 0;
 int highTempThreshold = DEFAULT_HIGH_TEMP;
 int lowTempThreshold = DEFAULT_LOW_TEMP;
 int highHumiThreshold = DEFAULT_HIGH_HUMI;
@@ -204,12 +202,12 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       if(strcmp(identifier, SET_HIGH_HUMI_THRESHOLD) == 0)
       {
         highHumiThreshold = atoi(data);
-        memory.putInt(LOW_TEMP_THRESHOLD_KEY, highHumiThreshold);
+        memory.putInt(HIGH_HUMI_THRESHOLD_KEY, highHumiThreshold);
       }
       if(strcmp(identifier, SET_LOW_HUMI_THRESHOLD) == 0)
       {
         lowHumiThreshold = atoi(data);
-        memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowHumiThreshold);
+        memory.putInt(LOW_HUMI_THRESHOLD_KEY, lowHumiThreshold);
       }
     }   
   } 
@@ -218,7 +216,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
     Serial.println("Received data from AC node");
     if (strcmp(topic, INDOOR_TEMP_TOPIC) == 0) 
     {
-      temperature = atof(message);
+      indoorTemp = atof(message);
       tempValid = true;
       Serial.println("Received temperature indoor");
     } 
@@ -259,7 +257,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
       {
         alarmBell = OFF;
       }
-      Serial.println("Received alarm message outdoor");
+      Serial.println("Received alarm message");
     }
   }
 }
