@@ -38,10 +38,10 @@ float outdoorHumi = 0;
 float lastOutDoorHumi = 0;
 bool rain = false;
 int lastRain = false;
-int highTempThreshold = DEFAULT_HIGH_TEMP;
-int lowTempThreshold = DEFAULT_LOW_TEMP;
-int highHumiThreshold = DEFAULT_HIGH_HUMI;
-int lowHumiThreshold = DEFAULT_LOW_HUMI;
+float highTempThreshold = DEFAULT_HIGH_TEMP;
+float lowTempThreshold = DEFAULT_LOW_TEMP;
+float highHumiThreshold = DEFAULT_HIGH_HUMI;
+float lowHumiThreshold = DEFAULT_LOW_HUMI;
 bool tempValid = false;
 bool humiValid = false;
 bool lightValid = false;
@@ -61,14 +61,20 @@ void ReadUserConfig()
 {
   memory.begin(MEMORY_NAMESPACE, false); 
   nodeMode = memory.getBool(MODE_KEY, DEFAULT_MODE);
-  highTempThreshold = memory.getInt(HIGH_TEMP_THRESHOLD_KEY, DEFAULT_HIGH_TEMP);
-  lowTempThreshold = memory.getInt(LOW_TEMP_THRESHOLD_KEY, DEFAULT_LOW_TEMP);
+  highTempThreshold = memory.getFloat(HIGH_TEMP_THRESHOLD_KEY, DEFAULT_HIGH_TEMP);
+  lowTempThreshold = memory.getFloat(LOW_TEMP_THRESHOLD_KEY, DEFAULT_LOW_TEMP);
+  highHumiThreshold = memory.getFloat(HIGH_HUMI_THRESHOLD_KEY, DEFAULT_HIGH_HUMI);
+  lowHumiThreshold = memory.getFloat(LOW_HUMI_THRESHOLD_KEY, DEFAULT_LOW_HUMI);
   Serial.print("User config is read: ");
   Serial.print(nodeMode);
   Serial.print("\t");
   Serial.print(highTempThreshold);
   Serial.print("\t");
   Serial.print(lowTempThreshold);
+  Serial.print("\n");
+  Serial.print(highHumiThreshold);
+  Serial.print("\t");
+  Serial.print(lowHumiThreshold);
   Serial.print("\n");
 }
 void SetupWifi() {
