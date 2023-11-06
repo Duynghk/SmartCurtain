@@ -26,7 +26,6 @@ int stateNode = OFF;
 bool nodeMode = DEFAULT_MODE;
 int windowStatus = CLOSE;
 int lastWindowStatus = CLOSE;
-int controlMessage = OFF;
 int indoorLight = 0;
 int outdoorLight = 0;
 
@@ -101,6 +100,9 @@ void ConnectToBroker() {
       client.subscribe(CTRL_TOPIC);
       client.subscribe(INDOOR_TEMP_TOPIC);
       client.subscribe(INDOOR_LIGHT_TOPIC);
+      client.subscribe(INDOOR_HUMI_TOPIC);
+      client.subscribe(OUTDOOR_LIGHT_TOPIC);
+      client.subscribe(ALARM_TOPIC);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
