@@ -9,15 +9,18 @@
 // Default values
 #define DEFAULT_HIGH_TEMP 28
 #define DEFAULT_LOW_TEMP 23
-#define CURTAIN_CLOSE_ANGLE 0
-#define CURTAIN_OPEN_ANGLE 130
+#define DEFAULT_HIGH_HUMI 70
+#define DEFAULT_LOW_HUMI 50
+#define WINDOW_CLOSE_ANGLE 0
+#define WINDOW_OPEN_ANGLE 130
 
 //Use for EEPROM
 #define MEMORY_NAMESPACE "NodeMemory"
 #define MODE_KEY "mode"
+#define HIGH_HUMI_THRESHOLD_KEY "highHumiThreshold"
+#define LOW_HUMI_THRESHOLD_KEY "lowHumiThreshold"
 #define HIGH_TEMP_THRESHOLD_KEY "highTempThreshold"
 #define LOW_TEMP_THRESHOLD_KEY "lowTempThreshold"
-
 // Curtain status
 #define CLOSE 0
 #define OPEN 1
@@ -38,32 +41,49 @@
 #define CLIENT_ID "CurtainSystemNode"
 
 // MQTT topics
-#define CTRL_TOPIC "Smarthome/ControlCurtainSystem"
-#define INDOOR_TEMP_TOPIC "Smarthome/Temperature"
+#define CTRL_TOPIC "Smarthome/ControlWindowSystem"
+#define INDOOR_TEMP_TOPIC "Smarthome/TempIndoor"
+#define OUTDOOR_TEMP_TOPIC "Smarthome/TempOutdoor"
+#define INDOOR_HUMI_TOPIC "Smarthome/HumiIndoor"
+#define OUTDOOR_HUMI_TOPIC "Smarthome/HumiIndoor"
 #define INDOOR_LIGHT_TOPIC "Smarthome/LightIndoor"
 #define OUTDOOR_LIGHT_TOPIC "Smarthome/LightOutdoor"
+#define RAIN_TOPIC "Smarthome/Rain"
 #define STATUS_TOPIC "SmartHome/UpdateStatusNodes"
 #define ERROR_TOPIC "SmartHome/ErrorWarning"
+#define ALARM_TOPIC "SmartHome/Alarm"
 
 // Control messages
 #define TURN_ON_NODE "NodeOn"
 #define TURN_OFF_NODE "NodeOff"
 #define SET_AUTO_MODE "AutoMode"
 #define SET_MANUAL_MODE "ManualMode"
-#define CLOSE_CURTAIN "CloseCurtain"
-#define OPEN_CURTAIN "OpenCurtain"
+#define CLOSE_WINDOW "CloseWindow"
+#define OPEN_WINDOW "OpenWindow"
 #define SET_HIGH_TEMP_THRESHOLD "SH"
 #define SET_LOW_TEMP_THRESHOLD "SL"
+#define SET_HIGH_HUMI_THRESHOLD "HH"
+#define SET_LOW_HUMI_THRESHOLD "HL"
 
 // Curtain status messages
-#define CURTAIN_CLOSED "CurtainClosed"
-#define CURTAIN_OPENED "CurtainOpened"
+#define WINDOW_CLOSED "WindowClosed"
+#define WINDOW_OPENED "WindowOpened"
 #define MODE_CHANGED "ModeChanged"
 
 // Light sensor messages
 #define DARK_STRING "Dark"
 #define LIGHT_STRING "Light"
 
+// Rain Sensor
+#define RAIN true
+#define NO_RAIN false
+#define RAIN_STRING "true"
+#define NO_RAIN_STRING "false"
+
+// Alarm smoke and gas
+#define WARN_MESS "WARNING"
+
 // ERROR 
-#define AC_ERROR "ACError"
+#define AC_ERROR "ACError" //air condition
+#define C_ERROR "CurtainError" //curtain
 #endif
