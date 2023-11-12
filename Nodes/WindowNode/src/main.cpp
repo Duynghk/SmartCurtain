@@ -32,17 +32,17 @@ int outdoorLight = 0;
 float indoorTemp = 0;
 float outdoorTemp = 0;
 float lastOutDoorTemp = 0;
-float indoorHumi = 0;
-float outdoorHumi = 0;
-float lastOutDoorHumi = 0;
+float indoorHumid = 0;
+float outdoorHumid = 0;
+float lastOutDoorHumid = 0;
 bool rain = false;
 int lastRain = false;
 float highTempThreshold = DEFAULT_HIGH_TEMP;
 float lowTempThreshold = DEFAULT_LOW_TEMP;
-float highHumiThreshold = DEFAULT_HIGH_HUMI;
-float lowHumiThreshold = DEFAULT_LOW_HUMI;
+float highHumidThreshold = DEFAULT_HIGH_HUMID;
+float lowHumidThreshold = DEFAULT_LOW_HUMID;
 bool tempValid = false;
-bool humiValid = false;
+bool humidValid = false;
 bool lightValid = false;
 bool inlightValid = false;
 bool outlightValid = false;
@@ -62,8 +62,8 @@ void ReadUserConfig()
   nodeMode = memory.getBool(MODE_KEY, DEFAULT_MODE);
   highTempThreshold = memory.getFloat(HIGH_TEMP_THRESHOLD_KEY, DEFAULT_HIGH_TEMP);
   lowTempThreshold = memory.getFloat(LOW_TEMP_THRESHOLD_KEY, DEFAULT_LOW_TEMP);
-  highHumiThreshold = memory.getFloat(HIGH_HUMI_THRESHOLD_KEY, DEFAULT_HIGH_HUMI);
-  lowHumiThreshold = memory.getFloat(LOW_HUMI_THRESHOLD_KEY, DEFAULT_LOW_HUMI);
+  highHumidThreshold = memory.getFloat(HIGH_HUMID_THRESHOLD_KEY, DEFAULT_HIGH_HUMID);
+  lowHumidThreshold = memory.getFloat(LOW_HUMID_THRESHOLD_KEY, DEFAULT_LOW_HUMID);
   Serial.print("User config is read: ");
   Serial.print(nodeMode);
   Serial.print("\t");
@@ -71,9 +71,9 @@ void ReadUserConfig()
   Serial.print("\t");
   Serial.print(lowTempThreshold);
   Serial.print("\n");
-  Serial.print(highHumiThreshold);
+  Serial.print(highHumidThreshold);
   Serial.print("\t");
-  Serial.print(lowHumiThreshold);
+  Serial.print(lowHumidThreshold);
   Serial.print("\n");
 }
 void SetupWifi() {
@@ -100,7 +100,7 @@ void ConnectToBroker() {
       client.subscribe(CTRL_TOPIC);
       client.subscribe(INDOOR_TEMP_TOPIC);
       client.subscribe(INDOOR_LIGHT_TOPIC);
-      client.subscribe(INDOOR_HUMI_TOPIC);
+      client.subscribe(INDOOR_HUMID_TOPIC);
       client.subscribe(OUTDOOR_LIGHT_TOPIC);
       client.subscribe(ALARM_TOPIC);
     } else {
@@ -207,15 +207,15 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
         lowTempThreshold = atoi(data);
         memory.putInt(LOW_TEMP_THRESHOLD_KEY, lowTempThreshold);
       }
-      if(strcmp(identifier, SET_HIGH_HUMI_THRESHOLD) == 0)
+      if(strcmp(identifier, SET_HIGH_HUMID_THRESHOLD) == 0)
       {
-        highHumiThreshold = atoi(data);
-        memory.putInt(HIGH_HUMI_THRESHOLD_KEY, highHumiThreshold);
+        highHumidThreshold = atoi(data);
+        memory.putInt(HIGH_HUMID_THRESHOLD_KEY, highHumidThreshold);
       }
-      if(strcmp(identifier, SET_LOW_HUMI_THRESHOLD) == 0)
+      if(strcmp(identifier, SET_LOW_HUMID_THRESHOLD) == 0)
       {
-        lowHumiThreshold = atoi(data);
-        memory.putInt(LOW_HUMI_THRESHOLD_KEY, lowHumiThreshold);
+        lowHumidThreshold = atoi(data);
+        memory.putInt(LOW_HUMID_THRESHOLD_KEY, lowHumidThreshold);
       }
     }   
   } 
@@ -256,7 +256,7 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
     }
     else if(strcmp(topic, ALARM_TOPIC) == 0)
     {
-      if(strcmp(message, WARN_MESS) == 0)
+      if(strcmp(message, TOXIC_GAS_WARNING) == 0)
       {
         windowStatus = OPEN;
         alarmBell = ON;
@@ -272,17 +272,17 @@ void MQTTCallback(char* topic, byte* payload, unsigned int length) {
 
 void ReadDHTSensor(void *pArg) {
   outdoorTemp = dht.readTemperature();
-  outdoorHumi = dht.readHumidity();
+  outdoorHumid = dht.readHumidity();
   rain = digitalRead(RAIN_SENSOR_PIN);
   if(outdoorTemp != lastOutDoorTemp)
   {
     client.publish(OUTDOOR_TEMP_TOPIC, String(outdoorTemp).c_str());
     lastOutDoorTemp = outdoorTemp;
   }
-  if(outdoorHumi != lastOutDoorHumi)
+  if(outdoorHumid != lastOutDoorHumid)
   {
-    client.publish(OUTDOOR_HUMI_TOPIC, String(outdoorHumi).c_str());
-    lastOutDoorHumi = outdoorHumi;
+    client.publish(OUTDOOR_HUMID_TOPIC, String(outdoorHumid).c_str());
+    lastOutDoorHumid = outdoorHumid;
   }
   if(rain != lastRain) 
   {
@@ -317,9 +317,9 @@ HEAD:
   {
     if(nodeMode == AUTO_MODE)
     {
-      if(tempValid && humiValid && lightValid)
+      if(tempValid && humidValid && lightValid)
       {
-        if(rain == true || outdoorLight == DARK || outdoorHumi == HIGH)
+        if(rain == true || outdoorLight == DARK || outdoorHumid == HIGH)
         {
           windowStatus = CLOSE;
         }
@@ -333,7 +333,7 @@ HEAD:
                   }
                   else if(outdoorTemp > highTempThreshold)
                   {
-                    if(outdoorHumi < lowHumiThreshold)
+                    if(outdoorHumid < lowHumidThreshold)
                     {
                       windowStatus = CLOSE;
                     }
@@ -349,7 +349,7 @@ HEAD:
                         }
                         else  if(outdoorTemp < lowTempThreshold)
                               {
-                                if(outdoorHumi < lowHumiThreshold)
+                                if(outdoorHumid < lowHumidThreshold)
                                 {
                                   windowStatus = CLOSE;
                                 }
@@ -357,10 +357,10 @@ HEAD:
                               }
                               else windowStatus = OPEN;
                         }
-                        else  if(outdoorHumi < lowHumiThreshold) windowStatus = CLOSE;
+                        else  if(outdoorHumid < lowHumidThreshold) windowStatus = CLOSE;
                               else  if(outdoorTemp > highTempThreshold || outdoorTemp < lowTempThreshold)
                                     {
-                                      if(lowHumiThreshold < indoorHumi && indoorHumi < highHumiThreshold)
+                                      if(lowHumidThreshold < indoorHumid && indoorHumid < highHumidThreshold)
                                       {
                                         windowStatus = CLOSE;
                                       }
@@ -393,7 +393,7 @@ HEAD:
           nodeMode = MANUAL_MODE;
           client.publish(CTRL_TOPIC, MODE_CHANGED);
           if(lightValid == false) client.publish(ERROR_TOPIC, AC_ERROR);
-          if(tempValid == false || humiValid == false) client.publish(ERROR_TOPIC, C_ERROR);
+          if(tempValid == false || humidValid == false) client.publish(ERROR_TOPIC, CURTAIN_ERROR);
         }
         delay(100);
         goto HEAD;

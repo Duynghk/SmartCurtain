@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+// Toxic gas alarm
+#define TOXIC_GAS_WARNING "ToxicGas"
+
 // Operating modes for the curtain system
 #define AUTO_MODE true  
 #define MANUAL_MODE false
@@ -9,16 +12,16 @@
 // Default values
 #define DEFAULT_HIGH_TEMP 28
 #define DEFAULT_LOW_TEMP 23
-#define DEFAULT_HIGH_HUMI 70
-#define DEFAULT_LOW_HUMI 50
+#define DEFAULT_HIGH_HUMID 65
+#define DEFAULT_LOW_HUMID 55
 #define WINDOW_CLOSE_ANGLE 0
 #define WINDOW_OPEN_ANGLE 130
 
 //Use for EEPROM
 #define MEMORY_NAMESPACE "NodeMemory"
 #define MODE_KEY "mode"
-#define HIGH_HUMI_THRESHOLD_KEY "highHumiThreshold"
-#define LOW_HUMI_THRESHOLD_KEY "lowHumiThreshold"
+#define HIGH_HUMID_THRESHOLD_KEY "highHumidThreshold"
+#define LOW_HUMID_THRESHOLD_KEY "lowHumidThreshold"
 #define HIGH_TEMP_THRESHOLD_KEY "highTempThreshold"
 #define LOW_TEMP_THRESHOLD_KEY "lowTempThreshold"
 // Curtain status
@@ -38,14 +41,14 @@
 // MQTT broker information
 #define MQTT_SERVER "broker.emqx.io"
 #define MQTT_PORT 1883
-#define CLIENT_ID "CurtainSystemNode"
+#define CLIENT_ID "WindowSystemNode"
 
 // MQTT topics
 #define CTRL_TOPIC "Smarthome/ControlWindowSystem"
 #define INDOOR_TEMP_TOPIC "Smarthome/TempIndoor"
 #define OUTDOOR_TEMP_TOPIC "Smarthome/TempOutdoor"
-#define INDOOR_HUMI_TOPIC "Smarthome/HumiIndoor"
-#define OUTDOOR_HUMI_TOPIC "Smarthome/HumiIndoor"
+#define INDOOR_HUMID_TOPIC "Smarthome/HumidIndoor"
+#define OUTDOOR_HUMID_TOPIC "Smarthome/HumidIndoor"
 #define INDOOR_LIGHT_TOPIC "Smarthome/LightIndoor"
 #define OUTDOOR_LIGHT_TOPIC "Smarthome/LightOutdoor"
 #define RAIN_TOPIC "Smarthome/Rain"
@@ -62,8 +65,8 @@
 #define OPEN_WINDOW "OpenWindow"
 #define SET_HIGH_TEMP_THRESHOLD "SH"
 #define SET_LOW_TEMP_THRESHOLD "SL"
-#define SET_HIGH_HUMI_THRESHOLD "HH"
-#define SET_LOW_HUMI_THRESHOLD "HL"
+#define SET_HIGH_HUMID_THRESHOLD "HH"
+#define SET_LOW_HUMID_THRESHOLD "HL"
 
 // Curtain status messages
 #define WINDOW_CLOSED "WindowClosed"
@@ -80,10 +83,7 @@
 #define RAIN_STRING "true"
 #define NO_RAIN_STRING "false"
 
-// Alarm smoke and gas
-#define WARN_MESS "WARNING"
-
 // ERROR 
-#define AC_ERROR "ACError" //air condition
-#define C_ERROR "CurtainError" //curtain
+#define AC_ERROR "ACError"
+#define CURTAIN_ERROR "CurtainError"
 #endif
